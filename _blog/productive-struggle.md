@@ -1,12 +1,12 @@
 ---
 layout: blog-detail
-name: "You're robbing yourself when you ask ChatGPT to solve it for you"
-image: "/assets/blog/robot-control.png"
+name: You're robbing yourself when you ask ChatGPT to solve it for you
+image: /assets/blog/aha-moment.png
 description: "When students use ChatGPT to solve problems instead of struggling through them, they rob themselves of the most valuable parts of learning: the joy of aha-moments, the confidence from overcoming complexity, and the deep understanding that only comes from building your own mental models. Productive struggle isn't teacher sadism — it's the only way to develop real mastery, and by bypassing it for quick answers, students trade long-term growth for short-term relief, leaving them with correct solutions but empty understanding."
 tags:
-    - "Productive struggle"
-    - "Learning"
-    - "ChatGPT"
+  - Productive struggle
+  - Learning
+  - ChatGPT
 ---
 
 # You're robbing yourself when you ask ChatGPT to solve it for you
