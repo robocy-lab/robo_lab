@@ -216,3 +216,9 @@ And also, that's not only way of
 implementing concurrent execution, but that's a theme for another post :)
 
 Thanks for reading!
+
+
+## Read more about it
+[epoll](https://man7.org/linux/man-pages/man7/epoll.7.html)  
+[asyncio](https://docs.python.org/3/library/asyncio.html)  
+[non-blocking io](https://eklitzke.org/blocking-io-nonblocking-io-and-epoll)
