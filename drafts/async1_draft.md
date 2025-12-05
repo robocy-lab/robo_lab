@@ -90,8 +90,8 @@ class Runtime:
 ```
 
 And now, as we have `Runtime`, lets try to design our own loop!
-> Remark: we assume that when we use `await`, function
-> saves it's state and "jumps" to loop
+> Remark: basically, when we use `await`, function
+saves it's state and "jumps" to loop
 ```python
 while True:
     # this loop is often called **event loop**!
@@ -134,9 +134,10 @@ async def send_to_server(addr):
 ```
 
 But our loop (for now!) has no way to work with non-timer events.
-In Linux, there is a such structure called `epoll`
-(MacOS has `kqueue` and Windows has `select` and `IOCP`, that does
-practically the same), that can store some amount of
+In Linux, exists api called `epoll`
+(MacOS has `kqueue` and Windows has `IOCP`, that does
+practically the same), you can think about it as a structure
+that can store some amount of
 files (socket that we use in http request is a file too!) and
 answer a question "Which of these files are ready to be read from
 or written to?". Function answering to that question is
@@ -185,8 +186,7 @@ while True:
 And that's final version of our `event loop`! It handles multiple
 tasks at once, can work with timers and keep your computer safe in
 case of very specific and unrealistic problem, that almost certainly
-won't ever happen in your life! But that's some cases when async is
-really needed:
+won't ever happen in your life! But there are some cases when async is really needed:
 - Web servers, that get many requests at once. Threads are good, but
 threads that can handle multiple requests at any time are cooler!
 - Database access in your app (they're relatively slow too)
@@ -209,8 +209,10 @@ proper error handling, not very optimal, doesn't include implementation
 of real-world state machine for functions etc., but I hope the process
 of building it gave you some intuition about how async in python, Rust,
 JavaScript ans C# is implemented (this model is called stackless
-coroutines). And also, that's not only way of
-implementing concurrent execution, but that's a theme for another
-post :)
+coroutines). `async` makes compiler store functions' state somewhere, ans `await` saves it for caller and jumps to 
+`event loop` where it waits for next event.
+
+And also, that's not only way of
+implementing concurrent execution, but that's a theme for another post :)
 
 Thanks for reading!
