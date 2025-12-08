@@ -362,3 +362,10 @@ a:hover {
     display: none;
   }
 }
+
+blockquote {
+  padding: 0.5em 1em;
+  border-left: 4px solid #3a8bbb;
+  background: #161b22;
+  font-style: italic;
+}
