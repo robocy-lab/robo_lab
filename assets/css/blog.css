@@ -30,6 +30,35 @@
   font-family: 'Montserrat', serif;
 }
 
+.blog-card .card-title.post-title,
+.blog-card .post-title-link {
+  color: white !important;
+  text-decoration: none !important;
+}
+
+.blog-card .card-title.post-title:hover,
+.blog-card .post-title-link:hover {
+  color: white !important;
+  text-decoration: none !important;
+}
+
+.blog-card .card-title.post-title:visited,
+.blog-card .post-title-link:visited {
+  color: white !important;
+  text-decoration: none !important;
+}
+
+.blog-card .card-title.post-title:active,
+.blog-card .post-title-link:active {
+  color: white !important;
+  text-decoration: none !important;
+}
+
+.blog-card .post-title-link {
+  display: inline-block;
+  cursor: pointer;
+}
+
 .tags-container .tag {
 
   background-color: var(--primary-color);
