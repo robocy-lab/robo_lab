@@ -2,6 +2,7 @@
 layout: blog-detail
 name: "But what's async anyway? (stackless coroutines)"
 image: "/assets/blog/event-loop.png"
+tg_post_link: "robocy/3" 
 description: "Asynchronous programming often feels like black magic hidden behind async/await keywords. But true mastery comes from peeling back the layers of abstraction. Instead of just accepting that it works, let's build an intuition for the Event Loop from scratch and discover the elegant machinery that allows a single thread to handle the world."
 tags:
   - "Fundamentals"
