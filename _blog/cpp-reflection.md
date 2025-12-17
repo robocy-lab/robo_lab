@@ -510,7 +510,7 @@ In addition, all the data required for the reflection should be available in the
 So what's next? Will the reflection improve our life? On the one hand, we haven't received a silver bullet which can solve all the problems. But it looks like there is no such one!
 The proposed reflection, if it manages to get to the final version of the standard and to the compilers, definitely will make our lives easy. No more code generation scripts and tools everywhere, small and beautiful parsers and less usage of macros.
 In addition to this, C++ even with reflection will remain an extremely fast language all thanks to the static nature of the proposed reflection approach.
-****
+
 The main question right now is when to expect reflection in the compilers?
 1. First, as mentioned above, "Bloomberg" has their fork of clang, which you can already use to play with the reflection
 2. The GCC already [has](https://gcc.gnu.org/projects/cxx-status.html) implementation of most of the proposals of the 26th standard, however reflection and `define_static_{string,object,array}` is not implemented yet, but looks like it will take little time!
@@ -518,12 +518,12 @@ The main question right now is when to expect reflection in the compilers?
 So it's a great time to touch the reflection and maybe start to create libraries even with the current unstable API, like [simdjson](https://github.com/simdjson/simdjson/blob/master/include/simdjson/compile_time_json.h) team.
 
 ## Links
-1. The proposal - https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2025/p2996r13.html
-2. Bloomberg compiler - https://github.com/bloomberg/clang-p2996
+1. [The proposal](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2025/p2996r13.html) - https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2025/p2996r13.html
+2. [Bloomberg compiler](https://github.com/bloomberg/clang-p2996) - https://github.com/bloomberg/clang-p2996
 3. GodBolt (compiler explorer):
-    1. clang - https://godbolt.org/z/71647q5Mo
-    2. edg - https://godbolt.org/z/4hK564scs
-4. Template repository to play with reflection - https://github.com/SPGC/clang-p2996-environment
+    1. [clang](https://godbolt.org/z/71647q5Mo) - https://godbolt.org/z/71647q5Mo
+    2. [edg](https://godbolt.org/z/4hK564scs) - https://godbolt.org/z/4hK564scs
+4. [Template repository to play with reflection](https://github.com/SPGC/clang-p2996-environment) - https://github.com/SPGC/clang-p2996-environment
 
 ## Author
 [Ilia Nechaev](https://info.spgc.dev)
