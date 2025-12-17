@@ -157,17 +157,29 @@ void print_fields()
   
     std::cout << std::meta::identifier_of(class_info) << ":\n";  
   
-  // This is one of the way to iterate over list of class data members. The proposed `template for` approach doesn't work for some reason with `display_string_of`
+  // This is one of the way to iterate over list of class data members. 
+  // The proposed `template for` approach doesn't work for some reason 
+  // with `display_string_of`
     [:  
         std::meta::detail::pretty_printer<char>::expand  
         (  
-            std::meta::nonstatic_data_members_of(class_info, std::meta::access_context::unchecked())  
+            std::meta::nonstatic_data_members_of
+            (
+                class_info
+                , std::meta::access_context::unchecked()
+            )  
         )  
     :] >> [&]<auto field>()  
         {  
-            constexpr std::string_view field_name = std::meta::identifier_of(field);  
+            constexpr std::string_view field_name = std::meta::identifier_of     
+            (
+                field
+            );  
   
-            constexpr auto field_info = std::meta::display_string_of(std::meta::type_of(field));  
+            constexpr auto field_info = std::meta::display_string_of
+            (
+                std::meta::type_of(field)
+            );  
   
             std::string access_modifier;  
   
@@ -184,7 +196,14 @@ void print_fields()
                 access_modifier = "private";  
             }  
   
-            std::cout << "  " << access_modifier << " " << field_name << ": " << field_info << " " << "\n";  
+            std::cout << "  " 
+                      << access_modifier 
+                      << " " 
+                      << field_name 
+                      << ": " 
+                      << field_info 
+                      << " " 
+                      << "\n";  
         };  
 }
 
@@ -202,9 +221,7 @@ struct Car
 private:  
     std::string owner;  
 };  
-  
-using Cars = struct_of_vec_t<Car>;  
-  
+    
 int main(int argc, char *argv[])  
 {  
     print_fields<Car>();
@@ -220,7 +237,7 @@ Car:
 This is a classical example of reflection usage. Such functions can be extremely helpful in debugging and in serialization.
 
 Here you can see a demo of a few functions and approaches:
-1.  `std::meta::identifier_of` allows to get the `std::string_view` with name of the reflected object (but for some reason it doesn't work for reflections of primitive types)
+1. `std::meta::identifier_of` allows to get the `std::string_view` with name of the reflected object (but for some reason it doesn't work for reflections of primitive types)
 2. `std::meta::display_string_of` allows to get the `std::string_view` with name of the reflected object, in a proposal it's said that this function should output human-readable and pretty output, however for now the only difference between this function and `std::meta::identifier_of` that this function works with reflections of primitive types.
 3. `std::meta::nonstatic_data_members_of` allows to get `std::vector<std::meta::info>` of non-static fields of class basing on the context (which will be described a bit bellow)
 4. `std::meta::is_public/protected/private()` allows to know the access qualifier of the field
@@ -228,15 +245,19 @@ Here you can see a demo of a few functions and approaches:
    
 As you may notice to iterate over the members of the class I used pretty strange functionality:
 ```c++
-    [:  
-        std::meta::detail::pretty_printer<char>::expand  
-        (  
-            std::meta::nonstatic_data_members_of(class_info, std::meta::access_context::unchecked())  
+[:  
+    std::meta::detail::pretty_printer<char>::expand  
+    (  
+        std::meta::nonstatic_data_members_of
+        (
+            class_info
+            , std::meta::access_context::unchecked()
         )  
-    :] >> [&]<auto field>()  
-	{ 
-	// Some code 
-	}
+    )  
+:] >> [&]<auto field>()  
+{ 
+// Some code 
+}
 ```
 This happens because on the one hand the  `std::meta::nonstatic_data_members_of` returns `std::vector<std::meta::info>`, which cannot be used in const-eval context which is required by `std::meta::info`, but on the other hand the proposed `template for` construction for some reason doesn't work correctly with `display_string_of` function (leads to crash).  
 **IMPORTANT**: most probably it won't be part of the standard, but rather a temporary hack in the Bloomberg for of clang
@@ -260,7 +281,14 @@ void print_object(T t)
     std::cout << std::meta::identifier_of(class_info) << ":\n";  
   
   
-    template for (constexpr auto field : std::define_static_array(std::meta::nonstatic_data_members_of(class_info, std::meta::access_context::unchecked())))  
+    template for (constexpr auto field : std::define_static_array
+    (
+        std::meta::nonstatic_data_members_of
+        (
+            class_info
+            , std::meta::access_context::unchecked()
+        )
+    ))  
     {  
         constexpr std::string_view field_name = std::meta::identifier_of(field);  
         std::cout << "  " << field_name << " = "  << t.[: field :] << "\n";  
@@ -298,83 +326,90 @@ This example is a continuation of the previous. And also can be useful in debugg
 1. As you can see the function can even access the private fields of the class, that's all thanks to `Splicer` operator.
 2. Also, there is correct iterating over the members of the class using `template for` which generates const-eval context inside (simply speaking (which is not truly correct) the `template for` statement will copy-paste its body changing all depending on data types accordingly, this is a powerful thing not only in terms of reflection, but also in terms of unpacking `std::tuple`, for example)
 3. The `std::define_static_array` promotes a compile-time array to static storage, which allow us to use containers like `std::vector` in the const-eval context (which is crucial for expansion statement like `template for`)
+
 ### Dictionary (map) serializer
 ```c++
-#include <any>  
-#include <map>  
-#include <meta>
 
-template <typename T>  
-T dict_serializer(std::map<std::string, std::any> dict)  
-{  
-    using namespace std::meta;  
-  
-    T result{};  
-  
-    constexpr auto ctx = access_context::unchecked();  
-  
-    template for (constexpr auto member : std::define_static_array(nonstatic_data_members_of(^^T, ctx)))  
-        {  
-            std::string_view name = identifier_of(member);  
-            if (name.empty())  
-            {  
-                continue;  
-            }  
-  
-            auto it = dict.find(std::string{name});  
-            if (it == dict.end())  
-            {  
-                continue;  
-            }  
-  
-            using MemberType = typename[: type_of(member) :];  
-  
-            if (auto p = std::any_cast<MemberType>(&it->second))  
-            {  
-                result.[: member :] = *p;  
-            }  
-            else  
-            {  
-                throw std::runtime_error("dict_serializer: wrong type for field '" + std::string{name} + "'");  
-            }  
-        };  
-  
-    return result;  
+#include <meta> 
+#include <map> 
+#include <any>
+
+template <typename T>
+T dict_serializer(std::map<std::string, std::any> dict)
+{
+    using namespace std::meta;
+
+    T result{};
+
+    constexpr auto ctx = access_context::unchecked();
+
+    template for (constexpr auto member : std::define_static_array
+    (
+        nonstatic_data_members_of(^^T, ctx)
+    ))
+    {
+        std::string_view name = identifier_of(member);
+        if (name.empty())
+        {
+            continue;
+        }
+
+        auto it = dict.find(std::string{name});
+        if (it == dict.end())
+        {
+            continue;
+        }
+
+        using MemberType = typename[: type_of(member) :];
+
+        if (auto p = std::any_cast<MemberType>(&it->second))
+        {
+            result.[: member :] = *p;
+        }
+        else
+        {
+            throw std::runtime_error
+            (
+                "dict_serializer: wrong type for field '"
+                + std::string{name}
+                + "'"
+            );
+        }
+    };
+
+    return result;
 }
 
-struct Car  
-{  
-    int cost;  
-    int amountOfWheels;  
-  
-    Car()  
-    : cost{0}  
-    , amountOfWheels{}  
-    , owner{} {}  
-  
-    Car(std::string owner, int cost, int amountOfWheels)  
-    : cost(cost)  
-    , amountOfWheels(amountOfWheels)  
-    , owner(owner) {}  
-  
-private:  
-    std::string owner;  
-};  
-  
-using Cars = struct_of_vec_t<Car>;  
-  
-int main(int argc, char *argv[])  
-{  
-    print_fields<Car>();  
-  
-    std::map<std::string, std::any> dict = {  
-        std::pair("cost", std::any(50)),  
-        std::pair("amountOfWheels", std::any(10)),  
-        std::pair("owner", std::string("Bob")),  
-    };  
-  
-    Car car = dict_serializer<Car>(dict);  
-  
+struct Car
+{
+    int cost;
+    int amountOfWheels;
+
+    Car()
+    : cost{0}
+    , amountOfWheels{}
+    , owner{} {}
+
+    Car(std::string owner, int cost, int amountOfWheels)
+    : cost(cost)
+    , amountOfWheels(amountOfWheels)
+    , owner(owner) {}
+
+private:
+    std::string owner;
+};
+
+int main(int argc, char *argv[])
+{
+
+    std::map<std::string, std::any> dict = {
+        std::pair("cost", std::any(50)),
+        std::pair("amountOfWheels", std::any(10)),
+        std::pair("owner", std::string("Bob")),
+    };
+
+    Car car = dict_serializer<Car>(dict);
+
     print_object(car);
 }
 ```
@@ -403,13 +438,22 @@ struct struct_of_vec
     {  
         auto ctx = std::meta::access_context::unchecked();  
   
-        std::vector<std::meta::info> old_members = std::meta::nonstatic_data_members_of(^^T, ctx);  
+        std::vector<std::meta::info> old_members = 
+                    std::meta::nonstatic_data_members_of(^^T, ctx);  
+                    
         std::vector<std::meta::info> new_members = {};  
+        
         for (std::meta::info member : old_members) {  
             auto vec_type = std::meta::substitute(^^std::vector, {  
                 type_of(member),  
             });  
-            auto mem_descr = std::meta::data_member_spec(vec_type, {.name = identifier_of(member)});  
+            
+            auto mem_descr = std::meta::data_member_spec
+            (
+                vec_type
+                , {.name = identifier_of(member)}
+            );  
+            
             new_members.push_back(mem_descr);  
         }  
   
@@ -480,3 +524,6 @@ So it's a great time to touch the reflection and maybe start to create libraries
     1. clang - https://godbolt.org/z/71647q5Mo
     2. edg - https://godbolt.org/z/4hK564scs
 4. Template repository to play with reflection - https://github.com/SPGC/clang-p2996-environment
+
+## Author
+[Ilia Nechaev](https://info.spgc.dev)
