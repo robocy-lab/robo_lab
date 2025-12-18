@@ -14,14 +14,18 @@ Before start talking about reflection in my beloved C++, we need to figure out w
 > In computer science, **reflective programming** or **reflection** is the ability of a process to examine, introspect, and modify its own structure and behavior.
 
 In simple words, reflection allows the program to ask itself: "what do I consist of."  
-Talking a bit more practical reflection allows us to figure out what fields the object has, which functions and maybe modify itself:
+Talking a bit more practical reflection allows us to figure out what fields the object has, which functions and maybe modify itself.
+
+Let's have a look at an example of reflection in some language where it already exists.
+Bellow there is a simple reflection example in Kotlin, a language where reflection is widely used and exists for a long time: 
 ```kotlin
 package dev.spgc
   
 import kotlin.reflect.KProperty1  
 import kotlin.reflect.full.companionObject  
 import kotlin.reflect.full.declaredMemberFunctions  
-  
+
+// Defining a class with some fields and some member functions 
 class Car(  
     val amountOfWheels: Int,  
     var ownerName: String,  
@@ -38,6 +42,7 @@ class Car(
         ownerName = newOwner  
     }  
   
+    // Kotlin's way to define static functions  
     companion object{  
         fun expensiveCar(ownerName: String) = Car(  
             4,  
@@ -50,17 +55,26 @@ class Car(
 }  
   
 fun main() {  
+    // Getting collection of all fields
     val carFields = Car::class.members.filterIsInstance<KProperty1<Car, *>>()  
+    // Getting collection of all member functions 
     val carMemberFunctions = Car::class.declaredMemberFunctions  
+    // Getting collection of all static functions
     val carStaticFunctions = Car::class.companionObject?.declaredMemberFunctions  
   
     println("Class car has ${carFields.size} fields and ${carMemberFunctions.size} member functions")  
-    println("Fields are")  
-    carFields.forEach {  
+    println("Fields are")
+    // Each reflected field of class has a visibility property, 
+    // name and type which can be easily accessed and coverted to string  
+    carFields.forEach {
         println("    ${it.visibility} ${it.name}: ${it.returnType}")  
     }  
   
     println("Member functions are")  
+    // Each reflected member and static function of class 
+    // has a visibility property, name, return type, parameters descriptions and 
+    // a lot of other useful things which can be 
+    // easily accessed and coverted to string  
     carMemberFunctions.forEach {  
         val parameter_string = it.parameters.joinToString { param -> "${param.name}: ${param.type}" }  
         println("    ${it.returnType} ${it.name} (${parameter_string})")  
@@ -73,7 +87,20 @@ fun main() {
     }  
 }
 ```
-Above you can see the simplest example of the reflection in Kotlin.
+**STDOUT**
+```
+Class car has 4 fields and 2 member functions
+Fields are
+    PUBLIC amountOfCrashes: kotlin.Int
+    PUBLIC amountOfWheels: kotlin.Int
+    PUBLIC cost: kotlin.Double
+    PUBLIC ownerName: kotlin.String
+Member functions are
+    kotlin.Unit crash (null: com.jetRelay.Car, damage: kotlin.Double)
+    kotlin.Unit sellTo (null: com.jetRelay.Car, newOwner: kotlin.String)
+Static functions are
+    com.jetRelay.Car expensiveCar (null: com.jetRelay.Car.Companion, ownerName: kotlin.String)
+```
 
 The example above is extremely simple but shows the idea of how we can use reflection.
 
@@ -102,9 +129,9 @@ In C++ we have a more bright perspective for this task:
 + Also use XMacro; for C++ it will be a complete nightmare, since C++ classes are much more complex than C structs. In addition, this approach can't be used for parameterized classes, as templates will be opened only during compilation, not preprocessing – where macros are opened
   But even if you are OK with writing a lot of boilerplate, imagine the following situation: you've decided to move from JSON to YAML. In this case you need to rewrite all the functions you have.
 
-But how can reflection help us with the problem?  
+But how can reflection help us with the problem of a lot of boilerplate in serialization (and to be honest, not only in serialization)?  
 One function to rule them all!  
-You implement a function which will take any object, go through all its fields, and store them in JSON/Yaml whatever you want. Deserialization works in the same way: you read JSON and construct the object accordingly. If you've decided to change the format you need to change or add only one function, not 100500.
+You implement a function which will take any object, go through all its fields, and store them in JSON/Yaml whatever you want. Deserialization works in the same way: you read JSON and construct the object accordingly. If you've decided to change the format, you need to change or add only one function, not 100500.
 
 ### So, only parsing JSON?
 And no, reflection is powerful tool. Using it we can create a lot of different utills:
@@ -116,12 +143,17 @@ And no, reflection is powerful tool. Using it we can create a lot of different u
 + Plugin systems
 + RPC and REST automatization
 
-A lot of these utils are already implemented in C++ right now. However, after adding the reflection, a lot of tools can be rewritten with bare C++, without using external generators (like in gRPC), custom preprocessors (like in QT) or macros (like in gTest).
+A lot of these utils are already implemented in C++ right now. 
+However, after adding the reflection, a lot of tools can be rewritten with bare C++, 
+without using external generators (like in Protobuf with protoc), 
+custom preprocessors (like in QT) or macros (like in gTest).
 
 So if you looked for the opportunity to start an open source project in C++ with almost empty field, it is a great time!
 
 ## What will be in C++?
-The standard is not finished yet. The current post is referencing [P2996R13](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2025/p2996r13.html) proposal, which already has some partial implementations in a few forks of major compilers. So some syntax still can be changed, but I hope the core ideas will remain the same.
+The reflection will be added in C++ with a new 26th standard along with a lot of other features extending compile-time.
+The standard is not finished yet. The current post is referencing [P2996R13](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2025/p2996r13.html) proposal, which already has some partial implementations in a few forks of major compilers. 
+So some syntax still can be changed, but I hope the core ideas will remain the same.
 ### New operators
 **Reflection operator**  
 Firstly in a new standard, a new operator will be added. The reflection operator will allow you to get the reflection representation of any type:
@@ -146,84 +178,84 @@ As mentioned above, a new library with a lot of simple, but still powerful funct
 Here there will be a list of examples compiled with [Bloomberg fork of clang](https://github.com/bloomberg/clang-p2996) with commit hash `4c3e6ae840c5edf4ed972a255e9059d1a92d879a`
 ### Class fields printer
 ```c++
-#include <iostream>  
-#include <meta>  
+#include <iostream>
+#include <meta>
+#include <string>
+#include <string_view>
   
   
-template <typename T>  
-void print_fields()  
-{  
-    constexpr std::meta::info class_info = ^^T;  
-  
-    std::cout << std::meta::identifier_of(class_info) << ":\n";  
-  
-  // This is one of the way to iterate over list of class data members. 
-  // The proposed `template for` approach doesn't work for some reason 
-  // with `display_string_of`
-    [:  
-        std::meta::detail::pretty_printer<char>::expand  
-        (  
+template <typename T>
+void print_fields()
+{
+    constexpr std::meta::info class_info = ^^T;
+
+    std::cout << std::meta::identifier_of(class_info) << ":\n";
+
+    // This is one of the way to iterate over list of class data members.
+    // The proposed `template for` approach doesn't work for some reason
+    // with `display_string_of`
+    // DO NOT RELLY ON THIS. THIS IS INTERNAL THING OF CLANG FORK FROM BLOOMBERG
+    // AND MOST PROBABLY IT WILL BE CHANGED IN THE FUTURE
+    [:
+        std::meta::detail::pretty_printer<char>::expand
+        (
             std::meta::nonstatic_data_members_of
             (
                 class_info
                 , std::meta::access_context::unchecked()
-            )  
-        )  
-    :] >> [&]<auto field>()  
-        {  
-            constexpr std::string_view field_name = std::meta::identifier_of     
-            (
-                field
-            );  
-  
-            constexpr auto field_info = std::meta::display_string_of
-            (
-                std::meta::type_of(field)
-            );  
-  
-            std::string access_modifier;  
-  
-            if constexpr (std::meta::is_public(field))  
-            {  
-                access_modifier = "public";  
-            }  
-            else if constexpr (std::meta::is_protected(field))  
-            {  
-                access_modifier = "protected";  
-            }  
-            else  
-            {  
-                access_modifier = "private";  
-            }  
-  
-            std::cout << "  " 
-                      << access_modifier 
-                      << " " 
-                      << field_name 
-                      << ": " 
-                      << field_info 
-                      << " " 
-                      << "\n";  
-        };  
+            )
+        )
+    :] >> [&]<auto field>()
+    {
+        constexpr std::string_view field_name = std::meta::identifier_of(field);
+
+        constexpr std::string_view field_info = std::meta::display_string_of
+        (
+            std::meta::type_of(field)
+        );
+
+        std::string access_modifier;
+
+        if constexpr (std::meta::is_public(field))
+        {
+            access_modifier = "public";
+        }
+        else if constexpr (std::meta::is_protected(field))
+        {
+            access_modifier = "protected";
+        }
+        else
+        {
+            access_modifier = "private";
+        }
+
+        std::cout << "  "
+                  << access_modifier
+                  << " "
+                  << field_name
+                  << ": "
+                  << field_info
+                  << " "
+                  << std::endl;
+    };
 }
 
-struct Car  
-{  
-    int cost;  
-    int amountOfWheels;  
-    
-    Car()  
-	: cost{0}  
-	, amountOfWheels{}  
-	, owner{} 
-	{}
-  
-private:  
-    std::string owner;  
-};  
-    
-int main(int argc, char *argv[])  
-{  
+struct Car
+{
+    int cost;
+    int amountOfWheels;
+
+    Car()
+    : cost{0}
+    , amountOfWheels{}
+    , owner{} {}
+
+private:
+    std::string owner;
+};
+
+int main(int argc, char *argv[])
+{
     print_fields<Car>();
 }
 ```
@@ -234,7 +266,7 @@ Car:
   public amountOfWheels: int 
   private owner: basic_string<char, char_traits<char>, allocator<char>> 
 ```
-This is a classical example of reflection usage. Such functions can be extremely helpful in debugging and in serialization.
+This is a classic example of reflection usage. Such functions can be extremely helpful in debugging and serialization
 
 Here you can see a demo of a few functions and approaches:
 1. `std::meta::identifier_of` allows to get the `std::string_view` with name of the reflected object (but for some reason it doesn't work for reflections of primitive types)
@@ -244,6 +276,8 @@ Here you can see a demo of a few functions and approaches:
 5. `std::meta::type_of` allows to get type reflection of the reflected value
    
 As you may notice to iterate over the members of the class I used pretty strange functionality:
+
+**IMPORTANT: IT WILL NOT BE THE PART OF STANDARD, BUT RATHER A TEMPORARY HACK IN THE BLOOMBERG FORK OF CLANG. DO NOT USE THIS IN YOUR CODE OR BE PREPARED FOR IT TO BE CHANGED IN THE FUTURE.**
 ```c++
 [:  
     std::meta::detail::pretty_printer<char>::expand  
@@ -259,8 +293,8 @@ As you may notice to iterate over the members of the class I used pretty strange
 // Some code 
 }
 ```
-This happens because on the one hand the  `std::meta::nonstatic_data_members_of` returns `std::vector<std::meta::info>`, which cannot be used in const-eval context which is required by `std::meta::info`, but on the other hand the proposed `template for` construction for some reason doesn't work correctly with `display_string_of` function (leads to crash).  
-**IMPORTANT**: most probably it won't be part of the standard, but rather a temporary hack in the Bloomberg for of clang
+This happens because on the one hand the  `std::meta::nonstatic_data_members_of` returns `std::vector<std::meta::info>`, which cannot be used in const-eval context which is required by `std::meta::info`, but on the other hand, the proposed `template for` construction for some reason doesn't work correctly with `display_string_of` function (leads to crash). 
+So I had to use this hack, even though it's a temporary solution and most probably will be changed in the future.
 
 Speaking about contexts (as I promised above), the proposal provides the idea of contexts to access members of classes with different qualifiers.  There are three contexts:
 1. `current` which inherits the current access rights (e.g. you have access rights like you call the class fields directly in the code)
@@ -270,29 +304,34 @@ Speaking about contexts (as I promised above), the proposal provides the idea of
 ### Unified debug function
 ```c++
 #include <iostream>
-#include <meta>  
-  
-  
-template <typename T>  
-void print_object(T t)  
-{  
-    constexpr std::meta::info class_info = ^^T;  
-  
-    std::cout << std::meta::identifier_of(class_info) << ":\n";  
-  
-  
-    template for (constexpr auto field : std::define_static_array
+#include <meta>
+#include <string>
+#include <string_view>
+
+
+template <typename T>
+void print_object(T t)
+{
+    constexpr std::meta::info class_info = ^^T;
+
+    std::cout << std::meta::identifier_of(class_info) << ":" << std::endl;
+
+
+    template for
     (
-        std::meta::nonstatic_data_members_of
+        constexpr std::meta::info field : std::define_static_array
         (
-            class_info
-            , std::meta::access_context::unchecked()
+            std::meta::nonstatic_data_members_of
+            (
+                class_info
+                , std::meta::access_context::unchecked()
+            )
         )
-    ))  
-    {  
-        constexpr std::string_view field_name = std::meta::identifier_of(field);  
-        std::cout << "  " << field_name << " = "  << t.[: field :] << "\n";  
-    }  
+    )
+    {
+        constexpr std::string_view field_name = std::meta::identifier_of(field);
+        std::cout << "  " << field_name << " = "  << t.[: field :] << std::endl;
+    }
 }
 
 struct Car  
@@ -311,7 +350,7 @@ private:
   
 int main(int argc, char *argv[])  
 {  
-    Car car{50, 10, "Bob"};  
+    Car car{"Bob", 50, 10};  
     print_object(car);
 }
 ```
@@ -329,32 +368,38 @@ This example is a continuation of the previous. And also can be useful in debugg
 
 ### Dictionary (map) serializer
 ```c++
-
-#include <meta> 
-#include <map> 
 #include <any>
+#include <map>
+#include <meta>
+#include <stdexcept>
+#include <string>
+#include <string_view>
+#include <utility>
+
 
 template <typename T>
 T dict_serializer(std::map<std::string, std::any> dict)
 {
-    using namespace std::meta;
-
     T result{};
 
-    constexpr auto ctx = access_context::unchecked();
+    // std::meta::access_context
+    constexpr auto ctx = std::meta::access_context::unchecked();
 
-    template for (constexpr auto member : std::define_static_array
+    template for
     (
-        nonstatic_data_members_of(^^T, ctx)
-    ))
+        constexpr std::meta::info member : std::define_static_array
+        (
+            std::meta::nonstatic_data_members_of(^^T, ctx)
+        )
+    )
     {
-        std::string_view name = identifier_of(member);
+        constexpr std::string_view name = std::meta::identifier_of(member);
         if (name.empty())
         {
             continue;
         }
 
-        auto it = dict.find(std::string{name});
+        const auto it = dict.find(std::string{name});
         if (it == dict.end())
         {
             continue;
@@ -362,7 +407,7 @@ T dict_serializer(std::map<std::string, std::any> dict)
 
         using MemberType = typename[: type_of(member) :];
 
-        if (auto p = std::any_cast<MemberType>(&it->second))
+        if (const auto p = std::any_cast<MemberType>(&it->second))
         {
             result.[: member :] = *p;
         }
@@ -402,7 +447,8 @@ private:
 int main(int argc, char *argv[])
 {
 
-    std::map<std::string, std::any> dict = {
+    std::map<std::string, std::any> dict = 
+    {
         std::pair("cost", std::any(50)),
         std::pair("amountOfWheels", std::any(10)),
         std::pair("owner", std::string("Bob")),
@@ -410,6 +456,7 @@ int main(int argc, char *argv[])
 
     Car car = dict_serializer<Car>(dict);
 
+    // Function from the previous example
     print_object(car);
 }
 ```
@@ -425,44 +472,49 @@ Nothing new here, but it's a great example, how unified JSON serialization/deser
 
 ### New types generation
 ```c++
+#include <string>
 #include <meta>  
 #include <vector>  
   
   
-template <typename T>  
-struct struct_of_vec  
-{  
-    struct impl;  
-  
-    consteval  
-    {  
-        auto ctx = std::meta::access_context::unchecked();  
-  
-        std::vector<std::meta::info> old_members = 
-                    std::meta::nonstatic_data_members_of(^^T, ctx);  
-                    
-        std::vector<std::meta::info> new_members = {};  
-        
-        for (std::meta::info member : old_members) {  
-            auto vec_type = std::meta::substitute(^^std::vector, {  
-                type_of(member),  
-            });  
-            
-            auto mem_descr = std::meta::data_member_spec
+template <typename T>
+struct struct_of_vec
+{
+    struct impl;
+
+    consteval
+    {
+        // std::meta::access_context
+        const auto ctx = std::meta::access_context::unchecked();
+
+        // std::vector<std::meta::info>
+        const auto old_members = std::meta::nonstatic_data_members_of(^^T, ctx);
+        std::vector<std::meta::info> new_members = {};
+
+        // This is consteval context, so we are allowed to iterate over vector
+        for (const auto member : old_members)
+        {
+            const std::meta::info vec_type = std::meta::substitute
+            (
+                ^^std::vector
+                , { std::meta::type_of(member), }
+            );
+
+            const std::meta::info mem_descr = std::meta::data_member_spec
             (
                 vec_type
-                , {.name = identifier_of(member)}
-            );  
-            
-            new_members.push_back(mem_descr);  
-        }  
-  
-        std::meta::define_aggregate(^^impl, new_members);  
-    };  
-  
-};  
-  
-template <typename T>  
+                , {.name = std::meta::identifier_of(member)}
+            );
+
+            new_members.push_back(mem_descr);
+        }
+
+        std::meta::define_aggregate(^^impl, new_members);
+    };
+
+};
+
+template <typename T>
 using struct_of_vec_t = struct_of_vec<T>::impl;
 
 struct Car  
@@ -483,6 +535,7 @@ using Cars = struct_of_vec_t<Car>;
   
 int main(int argc, char *argv[])  
 {   
+    // Function from the frist example
     print_fields<Cars>();
 }
 ```
@@ -511,9 +564,13 @@ So what's next? Will the reflection improve our life? On the one hand, we haven'
 The proposed reflection, if it manages to get to the final version of the standard and to the compilers, definitely will make our lives easy. No more code generation scripts and tools everywhere, small and beautiful parsers and less usage of macros.
 In addition to this, C++ even with reflection will remain an extremely fast language all thanks to the static nature of the proposed reflection approach.
 
-The main question right now is when to expect reflection in the compilers?
-1. First, as mentioned above, "Bloomberg" has their fork of clang, which you can already use to play with the reflection
-2. The GCC already [has](https://gcc.gnu.org/projects/cxx-status.html) implementation of most of the proposals of the 26th standard, however reflection and `define_static_{string,object,array}` is not implemented yet, but looks like it will take little time!
+The main question right now is when to expect reflection in the compilers? 
+To answer that first, it's important to understand when the standard will be published. 
+Usually the standard is published at the end of the year it references to. 
+So in the case of the 26th standard, it will be at the end of 2026, although the draft is going to be finalized in March 2026.
+But compilers usually provide support for the features which are already in the draft (or in proposals). So I hope we can expect reflection in new stable versions of GCC and Clang after finalizing the draft. The current status of the reflection is:
+1. First, as mentioned above, "Bloomberg" has their fork of clang, which you can already use to play with the reflection. However, there is no information about merging it to the master branch of clang.
+2. The GCC already [has](https://gcc.gnu.org/projects/cxx-status.html) implementation of most of the proposals of the 26th standard, however reflection and `define_static_{string,object,array}` is not implemented yet, but looks like it will take little time to be finished!
 
 So it's a great time to touch the reflection and maybe start to create libraries even with the current unstable API, like [simdjson](https://github.com/simdjson/simdjson/blob/master/include/simdjson/compile_time_json.h) team.
 
