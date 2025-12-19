@@ -3,6 +3,7 @@ layout: blog-detail
 name: "Reflection in C++. We waited for it! Or did we?"
 image: "/assets/blog/reflection.png"
 description: "An overview of reflection in C++26 with examples"
+tg_post_link: "robocy/4"
 tags:
   - "C++"
 ---
